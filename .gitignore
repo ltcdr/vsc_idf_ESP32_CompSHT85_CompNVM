@@ -48,6 +48,9 @@ cmake_install.cmake
 install_manifest.txt
 CTestTestfile.cmake
 
+#added by me cause I still see this file 
+CMakeLists.txt
+
 # Python environment files
 *.pyc
 *.pyo
@@ -63,8 +66,16 @@ env/
 
 # Language Servers
 .clangd/
+#added by me since I still see langd and so slash, so maybe a file 
+.clangd
 .ccls-cache/
 compile_commands.json
+
+#Devcontainer
+.devcontainer/
+
+#VSCode
+.vscode/
 
 # Windows specific
 Thumbs.db
