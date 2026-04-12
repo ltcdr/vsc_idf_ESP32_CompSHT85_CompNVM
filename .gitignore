@@ -51,7 +51,7 @@ install_manifest.txt
 CTestTestfile.cmake
 
 #added by me cause I still see this file 
-CMakeLists.txt
+#CMakeLists.txt
 
 # Python environment files
 *.pyc
