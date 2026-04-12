@@ -37,5 +37,5 @@ void app_main(void)
     
 
 
-    ESP_LOGI(TAG, "Application stopped.\n");
+    ESP_LOGI(module_tag, "Application stopped.\n");
 }
