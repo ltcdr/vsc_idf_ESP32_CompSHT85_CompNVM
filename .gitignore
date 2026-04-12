@@ -30,7 +30,9 @@ build/
 *.map
 flasher_args.json # Generated in build directory
 sdkconfig.old
-sdkconfig
+
+#following line was commented by me in order to add and track sdkconfig file
+#sdkconfig
 
 # ESP-IDF dependencies
 # For older versions or manual component management
@@ -48,6 +50,9 @@ cmake_install.cmake
 install_manifest.txt
 CTestTestfile.cmake
 
+#added by me cause I still see this file 
+CMakeLists.txt
+
 # Python environment files
 *.pyc
 *.pyo
@@ -63,8 +68,16 @@ env/
 
 # Language Servers
 .clangd/
+#added by me since I still see langd and so slash, so maybe a file 
+.clangd
 .ccls-cache/
 compile_commands.json
+
+#Devcontainer
+.devcontainer/
+
+#VSCode
+.vscode/
 
 # Windows specific
 Thumbs.db
