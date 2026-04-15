@@ -34,17 +34,45 @@
 #define I2C_MASTER_TIMEOUT_MS       1000
 
 #define SHT85_ADDRESS               0x44
-#define SHT85_GET_SERIAL            0x3682
+#define SHT85_GET_SERIAL_36         0x36u
+#define SHT85_GET_SERIAL_82         0x82u
 
 /* ====== Global variable declaration ====== */
-static const char *TAG = "pridys_sht85";
+static const char *module_tag = "pridys_sht85";
 
 i2c_master_bus_handle_t bus_handle;
 i2c_master_dev_handle_t dev_handle;
+//i2c_master_dev_handle_t * dev_handle_p;
 
 
 /* ====== Private functions ====== */
+void pSHT85_LF_read_sensor_serial(void)
+{
+    /* Empty buffer for 6 bytes: 
+        2 bytes serial, CRC; another 2 bytes serial => 4 bytes serial */
+    uint8_t data[6] = {0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u};
 
+    /* As per the datasheet, command 'Get Serial Number' 
+        is 0x36 82 */
+    uint8_t cmd[2] = {SHT85_GET_SERIAL_36, SHT85_GET_SERIAL_82};
+
+    
+    i2c_master_transmit(dev_handle, cmd, 2, pdMS_TO_TICKS(1000));
+
+    vTaskDelay(pdMS_TO_TICKS(50));
+
+    i2c_master_transmit_receive(dev_handle, cmd, 2, data, 6, pdMS_TO_TICKS(1000));
+
+    vTaskDelay(pdMS_TO_TICKS(50));
+
+    ESP_LOGI(module_tag, "serial number byte 1: %X", data[0]);
+    ESP_LOGI(module_tag, "serial number byte 2: %X", data[1]);
+    ESP_LOGI(module_tag, "CRC: %X", data[2]);
+
+    ESP_LOGI(module_tag, "serial number byte 3: %X", data[3]);
+    ESP_LOGI(module_tag, "serial number byte 4: %X", data[4]);
+    ESP_LOGI(module_tag, "CRC 2: %X", data[5]);
+}
 
 /* ====== Public functions ====== */
 void read_sht85_serial(i2c_master_dev_handle_t *dev_handle)
@@ -60,18 +88,18 @@ void read_sht85_serial(i2c_master_dev_handle_t *dev_handle)
 
     vTaskDelay(pdMS_TO_TICKS(50));
 
-    ESP_LOGI(TAG, "serial byte 1: %X", data[0]);
-    ESP_LOGI(TAG, "serial byte 2: %X", data[1]);
-    ESP_LOGI(TAG, "CRC 1: %X", data[2]);
+    ESP_LOGI(module_tag, "serial byte 1: %X", data[0]);
+    ESP_LOGI(module_tag, "serial byte 2: %X", data[1]);
+    ESP_LOGI(module_tag, "CRC 1: %X", data[2]);
 
-    ESP_LOGI(TAG, "serial byte 3: %X", data[3]);
-    ESP_LOGI(TAG, "serial byte 4: %X", data[4]);
-    ESP_LOGI(TAG, "CRC 2: %X", data[5]);
+    ESP_LOGI(module_tag, "serial byte 3: %X", data[3]);
+    ESP_LOGI(module_tag, "serial byte 4: %X", data[4]);
+    ESP_LOGI(module_tag, "CRC 2: %X", data[5]);
 }
 
 void pSHT85_F_init(void)
 {
-    ESP_LOGI(TAG, "Init called.\n");
+    ESP_LOGI(module_tag, "Init called.\n");
 
 
     i2c_master_bus_config_t bus_config = {
@@ -93,21 +121,21 @@ void pSHT85_F_init(void)
 
     ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle, &dev_config, &dev_handle));
 
-    
+    //dev_handle_p = &dev_handle;
     read_sht85_serial(&dev_handle);
+    pSHT85_LF_read_sensor_serial();
 
-
-    ESP_LOGI(TAG, "Init finished.\n");
+    ESP_LOGI(module_tag, "Init finished.\n");
 }
 
 void pSHT85_F_de_init(void)
 {
-    ESP_LOGI(TAG, "Deinitialization called.\n");
+    ESP_LOGI(module_tag, "Deinitialization called.\n");
 
 
     ESP_ERROR_CHECK(i2c_master_bus_rm_device(dev_handle));
     ESP_ERROR_CHECK(i2c_del_master_bus(bus_handle));
 
 
-    ESP_LOGI(TAG, "Deinitialization finished.\n");
+    ESP_LOGI(module_tag, "Deinitialization finished.\n");
 }
