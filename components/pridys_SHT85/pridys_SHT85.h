@@ -1,6 +1,6 @@
 /**
  * Header file of pridys component for SHT85 handling.
- * 
+ * pridys_SHT85.h
  */
 
 
