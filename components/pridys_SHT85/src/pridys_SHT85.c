@@ -21,22 +21,29 @@
 #include "pridys_SHT85.h"
 
 /* ====== Defines ====== */
-#define CONFIG_I2C_MASTER_SCL       22
-#define CONFIG_I2C_MASTER_SDA       21
+#define CONFIG_I2C_MASTER_SCL           22
+#define CONFIG_I2C_MASTER_SDA           21
 
-#define CONFIG_I2C_MASTER_FREQUENCY 10000
+#define CONFIG_I2C_MASTER_FREQUENCY     10000
 
-#define I2C_MASTER_SCL_IO           CONFIG_I2C_MASTER_SCL       /*!< GPIO number used for I2C master clock */
-#define I2C_MASTER_SDA_IO           CONFIG_I2C_MASTER_SDA       /*!< GPIO number used for I2C master data  */
-#define I2C_MASTER_NUM              I2C_NUM_0                   /*!< I2C port number for master dev */
-#define I2C_MASTER_FREQ_HZ          CONFIG_I2C_MASTER_FREQUENCY /*!< I2C master clock frequency */
-#define I2C_MASTER_TX_BUF_DISABLE   0                           /*!< I2C master doesn't need buffer */
-#define I2C_MASTER_RX_BUF_DISABLE   0                           /*!< I2C master doesn't need buffer */
-#define I2C_MASTER_TIMEOUT_MS       1000
+#define I2C_MASTER_SDA_IO               CONFIG_I2C_MASTER_SDA       /*!< GPIO number used for I2C master data  */
+#define I2C_MASTER_SCL_IO               CONFIG_I2C_MASTER_SCL       /*!< GPIO number used for I2C master clock */
+#define I2C_MASTER_NUM                  I2C_NUM_0                   /*!< I2C port number for master dev */
+#define I2C_MASTER_FREQ_HZ              CONFIG_I2C_MASTER_FREQUENCY /*!< I2C master clock frequency */
+#define I2C_MASTER_TX_BUF_DISABLE       0                           /*!< I2C master doesn't need buffer */
+#define I2C_MASTER_RX_BUF_DISABLE       0                           /*!< I2C master doesn't need buffer */
 
-#define SHT85_ADDRESS               0x44
-#define SHT85_GET_SERIAL_36         0x36u
-#define SHT85_GET_SERIAL_82         0x82u
+/** 1000ms timeout for an I2C frame. */
+#define I2C_MASTER_TIMEOUT_MS           1000
+
+/** 50ms delay after sending/receiving frames via I2C.
+ * Recommended to let the system process previous communication action. 
+ */
+#define I2C_MASTER_POST_FRAME_DELAY     50
+
+#define SHT85_ADDRESS                   0x44    //Sensor SHT85 I2C bus address as per the datasheet
+#define SHT85_GET_SERIAL_36             0x36u   //First byte of command get serial
+#define SHT85_GET_SERIAL_82             0x82u   //Second byte of command to get serial number from sensor SHT85
 
 /* ====== Global variable declaration ====== */
 static const char *module_tag = "pridys_sht85";
@@ -64,8 +71,9 @@ void pSHT85_LF_log_sensor_sht85_serial(void);
  */
 void pSHT85_LF_init_i2c_for_sensor_sht85(void)
 {
-    esp_err_t esp_err = ESP_OK;
+    esp_err_t esp_err = ESP_FAIL;
     
+    //Set up I2C bus as master, report error in case framework does not return ESP_OK
     i2c_master_bus_config_t bus_config = {
         .i2c_port = I2C_MASTER_NUM,
         .sda_io_num = I2C_MASTER_SDA_IO,
@@ -76,7 +84,15 @@ void pSHT85_LF_init_i2c_for_sensor_sht85(void)
     };
 
     esp_err = i2c_new_master_bus(&bus_config, &bus_handle);
+    
+    if(ESP_OK != esp_err)
+    {
+        ESP_LOGE(module_tag, "Function pSHT85_LF_init_i2c_for_sensor_sht85() encountered a problem "
+            "while initializing the I2C bus for communication with SHT85 sensor");
+    }
 
+
+    //Set up I2C device, sensor SHT85 in this case; Report error in case framework does not return ESP_OK
     i2c_device_config_t dev_config = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
         .device_address = SHT85_ADDRESS,
@@ -87,9 +103,10 @@ void pSHT85_LF_init_i2c_for_sensor_sht85(void)
 
     if(ESP_OK != esp_err)
     {
-        ESP_LOGE(module_tag, "Function pSHT85_LF_init_i2c_for_sht85() encountered a problem "
+        ESP_LOGE(module_tag, "Function pSHT85_LF_init_i2c_for_sensor_sht85() encountered a problem "
             "while initializing the I2C bus for communication with SHT85 sensor");
     }
+
 }
 
 /**
@@ -108,6 +125,8 @@ void pSHT85_LF_init_sensor_sht85_variables(void)
  */
 void pSHT85_LF_read_sensor_sht85_serial(void)
 {
+    esp_err_t esp_err = ESP_FAIL;
+
     /* Empty buffer for 6 bytes: 
         2 bytes serial, CRC; another 2 bytes serial => 4 bytes serial */
     uint8_t data[6] = {0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u};
@@ -116,16 +135,28 @@ void pSHT85_LF_read_sensor_sht85_serial(void)
         is 0x36 82 */
     uint8_t cmd[2] = {SHT85_GET_SERIAL_36, SHT85_GET_SERIAL_82};
 
-    i2c_master_transmit(dev_handle, cmd, 2, pdMS_TO_TICKS(1000));
 
-    vTaskDelay(pdMS_TO_TICKS(50));
+    esp_err = i2c_master_transmit(dev_handle, cmd, 2, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
 
-    i2c_master_transmit_receive(dev_handle, cmd, 2, data, 6, pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(I2C_MASTER_POST_FRAME_DELAY));
 
-    vTaskDelay(pdMS_TO_TICKS(50));
+    if(ESP_OK != esp_err)
+    {
+        ESP_LOGE(module_tag, "Function pSHT85_LF_read_sensor_sht85_serial() encountered a problem "
+            "while communicating with SHT85 sensor");
+    }
 
-    //TODO Add error check of framework functions above "i2c_master_transmit_receive()"
-    // and "i2c_master_transmit()"
+
+    esp_err = i2c_master_transmit_receive(dev_handle, cmd, 2, data, 6, pdMS_TO_TICKS(I2C_MASTER_TIMEOUT_MS));
+
+    vTaskDelay(pdMS_TO_TICKS(I2C_MASTER_POST_FRAME_DELAY));
+
+    if(ESP_OK != esp_err)
+    {
+        ESP_LOGE(module_tag, "Function pSHT85_LF_read_sensor_sht85_serial() encountered a problem "
+            "while communicating with SHT85 sensor");
+    }
+
 
     //Store into global variable (struct serial_SHT85_s) by copying the values
     serial_SHT85_s.four_byte_serial[0] = data[0];   //straight forward, copy first byte
@@ -156,42 +187,19 @@ void pSHT85_LF_log_sensor_sht85_serial(void)
 /* For documentation of public functions,
     please refer to function prototypes in header file. */
 
-void read_sht85_serial(i2c_master_dev_handle_t *dev_handle)
-{
-    uint8_t data[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    uint8_t cmd[2] = {0x36, 0x82};
-
-    i2c_master_transmit(*dev_handle, cmd, 2, pdMS_TO_TICKS(1000));
-
-    vTaskDelay(pdMS_TO_TICKS(50));
-
-    i2c_master_transmit_receive(*dev_handle, cmd, 2, data, 6, pdMS_TO_TICKS(1000));
-
-    vTaskDelay(pdMS_TO_TICKS(50));
-
-    ESP_LOGI(module_tag, "serial byte 1: %X", data[0]);
-    ESP_LOGI(module_tag, "serial byte 2: %X", data[1]);
-    ESP_LOGI(module_tag, "CRC 1: %X", data[2]);
-
-    ESP_LOGI(module_tag, "serial byte 3: %X", data[3]);
-    ESP_LOGI(module_tag, "serial byte 4: %X", data[4]);
-    ESP_LOGI(module_tag, "CRC 2: %X", data[5]);
-}
-
 void pSHT85_F_init(void)
 {
     ESP_LOGI(module_tag, "Init called.\n");
+
 
     pSHT85_LF_init_i2c_for_sensor_sht85();
 
     pSHT85_LF_init_sensor_sht85_variables();
 
-    pSHT85_LF_log_sensor_sht85_serial(); //experimental call to check behaviour of the module
-    //expected behaviour is to see 0xFF in console and later correct serial number
-
     pSHT85_LF_read_sensor_sht85_serial();
 
     pSHT85_LF_log_sensor_sht85_serial();
+
 
     ESP_LOGI(module_tag, "Init finished.\n");
 }
