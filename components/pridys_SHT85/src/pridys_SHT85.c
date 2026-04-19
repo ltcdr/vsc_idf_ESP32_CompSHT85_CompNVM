@@ -4,23 +4,23 @@
  */
 
 
-/* ====== Standard includes ====== */
+/* ======================== Standard includes ======================== */
 #include <stdio.h>
 #include <string.h>
 
-/* ====== Framework includes ====== */
+/* ======================== Framework includes ======================= */
 #include "sdkconfig.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-/* ====== Required includes ====== */
+/* ======================== Required includes ======================== */
 #include "driver/i2c_master.h"
 
-/* ====== Proprietary includes ====== */
+/* ======================== Proprietary includes ===================== */
 #include "pridys_SHT85.h"
 
-/* ====== Defines ====== */
+/* ======================== Defines ================================== */
 #define CONFIG_I2C_MASTER_SCL           22
 #define CONFIG_I2C_MASTER_SDA           21
 
@@ -45,7 +45,7 @@
 #define SHT85_GET_SERIAL_36             0x36u   //First byte of command get serial
 #define SHT85_GET_SERIAL_82             0x82u   //Second byte of command to get serial number from sensor SHT85
 
-/* ====== Global variable declaration ====== */
+/* ======================== Global variable declaration ============== */
 static const char *module_tag = "pridys_sht85";
 
 typedef struct{
@@ -58,13 +58,13 @@ static serial_SHT85_st serial_SHT85_s;
 i2c_master_bus_handle_t bus_handle;
 i2c_master_dev_handle_t dev_handle;
 
-/* ====== Function prototypes ====== */
+/* ======================== Function prototypes ====================== */
 void pSHT85_LF_init_i2c_for_sensor_sht85(void);
 void pSHT85_LF_init_sensor_sht85_variables(void);
 void pSHT85_LF_read_sensor_sht85_serial(void);
 void pSHT85_LF_log_sensor_sht85_serial(void);
 
-/* ====== Private functions ====== */
+/* ======================== Private functions ======================== */
 
 /**
  * Local function to initialize I2C bus and communication to SHT85 sennsor. 
@@ -182,7 +182,8 @@ void pSHT85_LF_log_sensor_sht85_serial(void)
     ESP_LOGI(module_tag, "\t%X", serial_SHT85_s.four_byte_serial[3]);
 }
 
-/* ====== Public functions ====== */
+
+/* ======================== Public functions ========================= */
 
 /* For documentation of public functions,
     please refer to function prototypes in header file. */
