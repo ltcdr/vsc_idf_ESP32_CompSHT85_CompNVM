@@ -59,17 +59,18 @@ i2c_master_bus_handle_t bus_handle;
 i2c_master_dev_handle_t dev_handle;
 
 /* ======================== Function prototypes ====================== */
-void pSHT85_LF_init_i2c_for_sensor_sht85(void);
-void pSHT85_LF_init_sensor_sht85_variables(void);
-void pSHT85_LF_read_sensor_sht85_serial(void);
-void pSHT85_LF_log_sensor_sht85_serial(void);
+static void pSHT85_LF_init_i2c_for_sensor_sht85(void);
+static void pSHT85_LF_init_sensor_sht85_variables(void);
+static void pSHT85_LF_read_sensor_sht85_serial(void);
+static void pSHT85_LF_log_sensor_sht85_serial(void);
+static uint8_t pSHT85_LF_calculate_CRC8_31(const uint8_t * data, size_t len);
 
 /* ======================== Private functions ======================== */
 
 /**
  * Local function to initialize I2C bus and communication to SHT85 sennsor. 
  */
-void pSHT85_LF_init_i2c_for_sensor_sht85(void)
+static void pSHT85_LF_init_i2c_for_sensor_sht85(void)
 {
     esp_err_t esp_err = ESP_FAIL;
     
@@ -113,7 +114,7 @@ void pSHT85_LF_init_i2c_for_sensor_sht85(void)
  * Local function to initialize variables for SHT85 handling, such as serial number. 
  * Initializes global struct serial_SHT85_s containing serial number and CRCs to 0xFFu.
  */
-void pSHT85_LF_init_sensor_sht85_variables(void)
+static void pSHT85_LF_init_sensor_sht85_variables(void)
 {
     memset(serial_SHT85_s.four_byte_serial, 0xFFu, 4);
     memset(serial_SHT85_s.two_byte_CRC, 0xFFu, 2);
@@ -123,7 +124,7 @@ void pSHT85_LF_init_sensor_sht85_variables(void)
  * Local function to read serial number from SHT85 via I2C, 
  * storing it to a global variable (struct serial_SHT85_s);
  */
-void pSHT85_LF_read_sensor_sht85_serial(void)
+static void pSHT85_LF_read_sensor_sht85_serial(void)
 {
     esp_err_t esp_err = ESP_FAIL;
 
@@ -173,13 +174,63 @@ void pSHT85_LF_read_sensor_sht85_serial(void)
  * Local function to log serial number of SHT85 via UART to console. 
  * Reading global serial_SHT85_s and printing the content via ESP_LOGI().
  */
-void pSHT85_LF_log_sensor_sht85_serial(void)
+static void pSHT85_LF_log_sensor_sht85_serial(void)
 {
     ESP_LOGI(module_tag, "Sensor SHT85 serial number:");
     ESP_LOGI(module_tag, "\t%X", serial_SHT85_s.four_byte_serial[0]);
     ESP_LOGI(module_tag, "\t%X", serial_SHT85_s.four_byte_serial[1]);
     ESP_LOGI(module_tag, "\t%X", serial_SHT85_s.four_byte_serial[2]);
     ESP_LOGI(module_tag, "\t%X", serial_SHT85_s.four_byte_serial[3]);
+}
+
+/**
+ * Local function to calculate CRC for sensor SHT85. 
+ * According to the datasheet, SHT85 uses a CRC with following specifications:
+ * - Polynomial: 0x31
+ * - Initialization value: 0xFF 
+ * - Reflect input: No
+ * - Reflect output: No
+ * - Final XOR: No
+ * Example: CRC(0xBEEF) = 0x92
+ * Another example: 2C 2E 55 A7 is the serial of a sensor SHT85
+ *                  Received CRC is 70 for first and 7A for second byte
+ *                  Calculated by this function and an online calculator is the same
+ */
+static uint8_t pSHT85_LF_calculate_CRC8_31(const uint8_t * data, size_t len)
+{
+    uint8_t crc = 0xFF;
+
+    if (data == NULL || len == 0)
+    {
+        //we have a problem here, do not do CRC calculation
+    }
+    else
+    {
+        //Data pointer and length is not null, proceed with CRC calculation
+
+        for (size_t byte_index = 0; byte_index < len; byte_index++)
+        {
+            uint8_t byte = data[byte_index];
+            crc = crc ^ byte;
+
+            for (int bit_index = 0; bit_index < 8; bit_index++)
+            {
+                if( (crc & 0x80) == 0x80 )
+                {
+                    //MSB is set, shift left apply the polynomial with XOR
+                    crc = (crc << 1) ^ 0x31;
+                }
+                else
+                {
+                    //MSB is not set, just shift left
+                    crc = (crc << 1);
+                }
+            }
+        }
+
+    }
+
+    return crc;
 }
 
 
@@ -200,6 +251,21 @@ void pSHT85_F_init(void)
     pSHT85_LF_read_sensor_sht85_serial();
 
     pSHT85_LF_log_sensor_sht85_serial();
+
+
+    /* experimental and temporary part of code for playing around with CRC */
+    ESP_LOGI(module_tag, "Received CRC for first byte of serial:");
+    ESP_LOGI(module_tag, "\t%X", serial_SHT85_s.two_byte_CRC[0]);
+
+    ESP_LOGI(module_tag, "Calculated CRC for first byte of serial:");
+    ESP_LOGI(module_tag, "\t%X", pSHT85_LF_calculate_CRC8_31(&serial_SHT85_s.four_byte_serial[0], 2));
+    
+
+    ESP_LOGI(module_tag, "Received CRC for second byte of serial:");
+    ESP_LOGI(module_tag, "\t%X", serial_SHT85_s.two_byte_CRC[1]);
+
+    ESP_LOGI(module_tag, "Calculated CRC for second byte of serial:");
+    ESP_LOGI(module_tag, "\t%X", pSHT85_LF_calculate_CRC8_31(&serial_SHT85_s.four_byte_serial[2], 2));
 
 
     ESP_LOGI(module_tag, "Init finished.\n");
