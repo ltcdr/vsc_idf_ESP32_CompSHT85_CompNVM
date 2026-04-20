@@ -8,36 +8,35 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-    - uses: actions/checkout@v4
+      - name: Checkout repository
+      - uses: actions/checkout@v4
 
-    - name: Install dependencies
-    - run: |
-        sudo apt-get update 
-        sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util
+      - name: Install dependencies
+      - run: |
+          sudo apt-get update 
+          sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util
 
-    -name: Install ESP-IDF
-    - run: |
-        git clone -- recursive https://github.com/espressif/esp-idf.git $HOME/esp-idf
-        cd $HOME/esp-idf
-        git checkout v6.0 
-        ./install.sh
+      -name: Install ESP-IDF
+      - run: |
+          git clone -- recursive https://github.com/espressif/esp-idf.git $HOME/esp-idf
+          cd $HOME/esp-idf
+          git checkout v6.0 
+          ./install.sh
 
-    - name: Export ESP-IDF environment
-    - run: |
-        . $HOME/esp-idf/export.sh
-        echo "IDF_PATH=$HOME/esp-idf" >> $GITHUB_ENV
+      - name: Export ESP-IDF environment
+      - run: |
+          . $HOME/esp-idf/export.sh
+          echo "IDF_PATH=$HOME/esp-idf" >> $GITHUB_ENV
     
-    - name: Configure CMake
-      run: |
+      - name: Configure CMake
+        run: |
           . $HOME/esp-idf/export.sh
           cmake -S . -B build -G Ninja
           
-    - name: Build with Ninja
-      run: |
+      - name: Build with Ninja
+        run: |
           . $HOME/esp-idf/export.sh
           ninja -C build
