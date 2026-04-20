@@ -27,13 +27,13 @@ void app_main(void)
     ESP_LOGI(module_tag, "\n");
     ESP_LOGI(module_tag, "Application started...\n");
 
-    /* ====== Init section ====== */
+    /* =========== Init section =========== */
     pSHT85_F_init();
 
-    /* ====== Runtime section ====== */
+    /* =========== Runtime section ======== */
 
 
-    /* ====== De init section ====== */
+    /* =========== De init section ======== */
     pSHT85_F_de_init();
 
 
