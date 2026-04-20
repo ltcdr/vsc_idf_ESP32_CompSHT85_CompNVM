@@ -3,19 +3,19 @@
  * Using a SHT85 via I2C and Non Volatile Memory (FATFS, wear levelling)
  */
 
-/* ====== Standard includes ====== */
+/* ======================== Standard includes ======================== */
 #include <stdio.h>
 
-/* ====== Framework includes ====== */
+/* ======================== Framework includes ======================= */
 #include "esp_log.h"
 
-/* ====== Proprietary includes ====== */
+/* ======================== Proprietary includes ===================== */
 #include "pridys_SHT85.h"
 
-/* ====== Defines ====== */
+/* ======================== Defines ================================== */
 //#define asdf 0x01
 
-/* ====== Global variable declaration ====== */
+/* ======================== Global variable declaration ============== */
 static const char * module_tag = "ESP_SHT85_NVM_main";
 
 
