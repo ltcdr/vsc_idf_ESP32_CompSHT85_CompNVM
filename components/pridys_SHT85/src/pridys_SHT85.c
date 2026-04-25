@@ -49,6 +49,8 @@ static void pSHT85_LF_log_sensor_sht85_serial(void);
 static void pSHT85_LF_init_sensor_sht85_variables(void)
 {
     memset(four_byte_serial_SHT85_s.serial_u8a, 0xFFu, 4);
+    measurement_pair_SHT85_f_s.temperature_f = NAN;
+    measurement_pair_SHT85_f_s.humidity_f = NAN;
 }
 
 /**
