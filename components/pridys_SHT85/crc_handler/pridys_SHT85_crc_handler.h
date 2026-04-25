@@ -30,7 +30,7 @@ uint8_t pSHT85_crc_handler_F_calculate_CRC(const uint8_t * data, size_t len);
  * @return bool     =>  TRUE if given CRC matched
  *                  =>  FALSE if provided CRC did not match
  */
-bool pSHT85_crc_handler_F_compare_CRC(uint8_t CRC1, uint8_t CRC2);
+bool pSHT85_crc_handler_F_is_CRC_equal(uint8_t CRC1, uint8_t CRC2);
 
 
 #endif /* PRIDYS_SHT85_CRC_HANDLER_H */

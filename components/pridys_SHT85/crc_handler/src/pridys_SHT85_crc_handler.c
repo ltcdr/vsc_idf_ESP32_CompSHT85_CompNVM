@@ -58,7 +58,7 @@ uint8_t pSHT85_crc_handler_F_calculate_CRC(const uint8_t * data, size_t len)
                 if( (crc & 0x80) == 0x80 )
                 {
                     //MSB is set, shift left apply the polynomial with XOR
-                    crc = (crc << 1) ^ 0x31;
+                    crc = (crc << 1) ^ 0x31;        ///TODO get rid of magic numbers, also check others like 0x80 and 0xFF
                 }
                 else
                 {
@@ -75,10 +75,14 @@ uint8_t pSHT85_crc_handler_F_calculate_CRC(const uint8_t * data, size_t len)
 
 /**
  * Function to compare two CRC bytes.
- * @return bool     =>  TRUE if given CRC matched
+ * Answer with a bool whether or not the as parameters given 
+ * CRC bytes are the same.
+ * @param   CRC1    Unsigned byte holding the first CRC for comparison
+ * @param   CRC2    Unsigned byte holding the second CRC
+ * @return  bool    =>  TRUE if given CRC matched
  *                  =>  FALSE if provided CRC did not match
  */
-bool pSHT85_crc_handler_F_compare_CRC(uint8_t CRC1, uint8_t CRC2)
+bool pSHT85_crc_handler_F_is_CRC_equal(uint8_t CRC1, uint8_t CRC2)
 {
     bool loc_CRC_are_same_return_b = false;
 
@@ -87,7 +91,7 @@ bool pSHT85_crc_handler_F_compare_CRC(uint8_t CRC1, uint8_t CRC2)
     {
         loc_CRC_are_same_return_b = false;
 
-        ESP_LOGE(module_tag, "Function pSHT85_crc_handler_F_compare_CRC() "
+        ESP_LOGE(module_tag, "Function pSHT85_crc_handler_F_is_CRC_equal() "
             "encountered a problem: CRC1 is not same as CRC2!");
         ESP_LOGI(module_tag, "\tCRC1: %X", CRC1);
         ESP_LOGI(module_tag, "\tCRC2: %X", CRC2);
