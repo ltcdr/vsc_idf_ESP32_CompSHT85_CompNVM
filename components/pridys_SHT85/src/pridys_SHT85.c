@@ -36,7 +36,7 @@ measurement_pair_SHT85_f_st     measurement_pair_SHT85_f_s;
 
 
 /* ======================== Function prototypes ====================== */
-static void pSHT85_LF_init_sensor_sht85_variables(void);
+static void pSHT85_LF_init_variables(void);
 static void pSHT85_LF_log_sensor_sht85_serial(void);
 
 
@@ -44,9 +44,11 @@ static void pSHT85_LF_log_sensor_sht85_serial(void);
 
 /**
  * Local function to initialize variables for SHT85 handling, such as serial number. 
- * Initializes global struct serial_SHT85_s containing serial number and CRCs to 0xFFu.
+ * Initializes 
+ *      - global struct serial_SHT85_s containing serial number and CRCs to 0xFFu
+ *      - global struct measurement_pair_SHT85_f_s with NAN
  */
-static void pSHT85_LF_init_sensor_sht85_variables(void)
+static void pSHT85_LF_init_variables(void)
 {
     memset(four_byte_serial_SHT85_s.serial_u8a, 0xFFu, 4);
     measurement_pair_SHT85_f_s.temperature_f = NAN;
@@ -77,12 +79,18 @@ void pSHT85_F_init(void)
     ESP_LOGI(module_tag, "Init called.\n");
 
 
-    pSHT85_LF_init_sensor_sht85_variables();
+    //Call module internal init functions
+    pSHT85_LF_init_variables();
 
+
+    //Call submodule init functions
     pSHT85_i2c_commands_F_init();
-    pSHT85_i2c_commands_F_read_serial();
-
     pSHT85_status_register_F_init();
+
+
+    //Kinda runtime calls... 
+    ///TODO Create runtime function and move this behaviour there!
+    pSHT85_i2c_commands_F_read_serial();
 
     ESP_LOGI(module_tag, "Heater Status Bit: %d", pSHT85_status_register_F_is_heater_active());
 
