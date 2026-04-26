@@ -92,6 +92,7 @@ void pSHT85_F_init(void)
     ///TODO Create runtime function and move this behaviour there!
     pSHT85_i2c_commands_F_read_serial();
 
+    pSHT85_status_register_F_read_SR();
     ESP_LOGI(module_tag, "Heater Status Bit: %d", pSHT85_status_register_F_is_heater_active());
 
     pSHT85_LF_log_sensor_sht85_serial();
@@ -100,7 +101,62 @@ void pSHT85_F_init(void)
     ESP_LOGI(module_tag, "Temperature: %.2f", measurement_pair_SHT85_f_s.temperature_f);
     ESP_LOGI(module_tag, "Humidity: %.2f", measurement_pair_SHT85_f_s.humidity_f);
 
+
     //pSHT85_LF_plausibility_check();
+
+    ESP_LOGI(module_tag, "Activating heater...");
+    pSHT85_i2c_commands_F_activate_heater();
+
+    
+    ESP_LOGI(module_tag, ".");
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    ESP_LOGI(module_tag, ".");
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    ESP_LOGI(module_tag, ".");
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    ESP_LOGI(module_tag, "Waited eight seconds..here comes a measurement...");
+
+
+    pSHT85_status_register_F_read_SR();
+    ESP_LOGI(module_tag, "Heater Status Bit: %d", pSHT85_status_register_F_is_heater_active());
+
+
+    (void)pSHT85_i2c_commands_F_retrieve_measurement_pair(&measurement_pair_SHT85_f_s);
+    ESP_LOGI(module_tag, "Temperature: %.2f", measurement_pair_SHT85_f_s.temperature_f);
+    ESP_LOGI(module_tag, "Humidity: %.2f", measurement_pair_SHT85_f_s.humidity_f);
+
+
+    ESP_LOGI(module_tag, "Deactivating heater...");
+    pSHT85_i2c_commands_F_de_activate_heater();
+
+
+    ESP_LOGI(module_tag, ".");
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    ESP_LOGI(module_tag, ".");
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    ESP_LOGI(module_tag, ".");
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    ESP_LOGI(module_tag, "Waited eight seconds..here comes a measurement...");
+
+
+    pSHT85_status_register_F_read_SR();
+    ESP_LOGI(module_tag, "Heater Status Bit: %d", pSHT85_status_register_F_is_heater_active());
+
+
+    (void)pSHT85_i2c_commands_F_retrieve_measurement_pair(&measurement_pair_SHT85_f_s);
+    ESP_LOGI(module_tag, "Temperature: %.2f", measurement_pair_SHT85_f_s.temperature_f);
+    ESP_LOGI(module_tag, "Humidity: %.2f", measurement_pair_SHT85_f_s.humidity_f);
+
 
 
     ESP_LOGI(module_tag, "Init finished.\n");
