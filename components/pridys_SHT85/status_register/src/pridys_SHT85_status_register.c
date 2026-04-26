@@ -66,7 +66,8 @@ void pSHT85_status_register_LF_clear_SR(void);
  *                  => false:   CRC mismatch 
  *                  => true:    CRC check was OK
  */
-bool pSHT85_status_register_LF_read_SR(void);
+//bool pSHT85_status_register_LF_read_SR(void);
+//TODO Check if move to public was really senseful! 
 
 
 /* ======================== Private functions ======================== */
@@ -90,7 +91,13 @@ void pSHT85_status_register_LF_clear_SR(void)
     }
 }
 
-bool pSHT85_status_register_LF_read_SR(void)
+
+/* ======================== Public functions ========================= */
+
+/* For documentation of public functions,
+        please refer to function prototypes in header file. */
+
+bool pSHT85_status_register_F_read_SR(void)
 {
     bool return_value_loc = false;      //Initialize indicator of successful processing with FALSE
 
@@ -99,7 +106,7 @@ bool pSHT85_status_register_LF_read_SR(void)
     esp_err_t esp_err = ESP_FAIL;
 
     /* As per the datasheet, command 'read status register' is 0xF3 2D */
-    uint8_t cmd[2] = {0x30u, 0x41u};
+    uint8_t cmd[2] = {0xF3u, 0x2Du};
 
     esp_err = i2c_master_transmit_receive(
         dev_handle, cmd, 2, 
@@ -113,7 +120,7 @@ bool pSHT85_status_register_LF_read_SR(void)
     {
         return_value_loc = false;
 
-        ESP_LOGE(module_tag, "Function pSHT85_status_register_LF_read_SR()"
+        ESP_LOGE(module_tag, "Function pSHT85_status_register_F_read_SR()"
             "encountered a problem: i2c_master_transmit() did not return ESP_OK!");
     }
 
@@ -124,7 +131,7 @@ bool pSHT85_status_register_LF_read_SR(void)
     status_register_sht85_s.crc_calculated_u8 = pSHT85_crc_handler_F_calculate_CRC(
         &status_register_sht85_s.raw_bytes_u8a[0], 2
     );
-    CRC_OK = pSHT85_crc_handler_F_compare_CRC(
+    CRC_OK = pSHT85_crc_handler_F_is_CRC_equal(
         status_register_sht85_s.crc_calculated_u8, 
         status_register_sht85_s.crc_received_u8
     );
@@ -135,7 +142,7 @@ bool pSHT85_status_register_LF_read_SR(void)
 
         memset(&status_register_sht85_s.raw_bytes_u8a[0], 0xFFu, 2);
 
-        ESP_LOGE(module_tag, "Function pSHT85_status_register_LF_read_SR() "
+        ESP_LOGE(module_tag, "Function pSHT85_status_register_F_read_SR() "
             "encountered a problem: Due to CRC mismatch, status register is invalid!");
     }
     else
@@ -155,11 +162,6 @@ bool pSHT85_status_register_LF_read_SR(void)
 }
 
 
-/* ======================== Public functions ========================= */
-
-/* For documentation of public functions,
-        please refer to function prototypes in header file. */
-
 bool pSHT85_status_register_F_is_heater_active(void)
 {
     bool return_value_loc = true;
@@ -176,7 +178,7 @@ bool pSHT85_status_register_F_is_heater_active(void)
         //Status register seems to be successfully read previously
         // => Evaluate heater status
 
-        if( (status_register_sht85_s.raw_bytes_u8a[0] & 0x20u) == 0x20)
+        if( (status_register_sht85_s.raw_bytes_u8a[0] & 0x20u) == 0x20u)
         {
             return_value_loc = true;
         }
@@ -199,7 +201,7 @@ void pSHT85_status_register_F_init(void)
     memset(&status_register_sht85_s, 0xFFu, sizeof(status_register_sht85_s));
 
     pSHT85_status_register_LF_clear_SR();
-    pSHT85_status_register_LF_read_SR();
+    pSHT85_status_register_F_read_SR();
 
 
     ESP_LOGI(module_tag, "Init finished.\n");
