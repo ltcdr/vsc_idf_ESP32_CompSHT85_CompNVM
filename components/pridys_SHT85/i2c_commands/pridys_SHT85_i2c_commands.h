@@ -29,7 +29,7 @@ typedef struct{
 
 /**
  * Initialization function of pridys SHT85 I2C commands submodule. 
- * Sets up I2C communication channel.
+ * Sets up I2C communication channel and initializes global variables. 
  */
 void pSHT85_i2c_commands_F_init(void);
 

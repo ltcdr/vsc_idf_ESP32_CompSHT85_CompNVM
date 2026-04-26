@@ -69,10 +69,83 @@ static measurement_pair_SHT85_f_st  measurement_pair_SHT85_f_s;
 i2c_master_bus_handle_t bus_handle;
 i2c_master_dev_handle_t dev_handle;
 
+
 /* ======================== Function prototypes ====================== */
+/**
+ * Function for initialization of all global variables. 
+ * All submodule internal global variables are initialized here.
+ * Global variables like dev_handle are initialized elsewhere and 
+ * they are intentionally without the keyword 'static'. They are 
+ * used in other modules and bound in via 'extern' keyword. 
+ * File pridys_SHT85_status_register.c also needs to send I2C frames
+ * and therefore requires it. 
+ */
+void pSHT85_i2c_commands_LF_init_variables(void);
+
+void pSHT85_i2c_commands_LF_init_handles_for_i2c_bus(void);
 
 
 /* ======================== Private functions ======================== */
+void pSHT85_i2c_commands_LF_init_variables(void)
+{
+    //Initialize struct variable for serial number of sensor SHT85
+    memset(serial_SHT85_s.four_byte_serial_SHT85_s.serial_u8a, 0xFFu, 4);
+    memset(serial_SHT85_s.crc_received_u8a, 0xFFu, 2);
+    memset(serial_SHT85_s.crc_calculated_u8a, 0xFFu, 2);
+
+    //Initialize struct variable for measurement values
+    memset(measurement_SHT85_s.temperature_raw_u8a, 0xFFu, 2);
+    memset(measurement_SHT85_s.humidity_raw_u8a, 0xFFu, 2);
+    memset(measurement_SHT85_s.crc_received_u8a, 0xFFu, 2);
+    memset(measurement_SHT85_s.crc_calculated_u8a, 0xFFu, 2);
+    measurement_SHT85_s.temperature_raw_u16 = 0xFFFFu;
+    measurement_SHT85_s.humidity_raw_u16 = 0xFFFFu;
+    measurement_SHT85_s.temperature_f = NAN;
+    measurement_SHT85_s.humidity_f = NAN;
+
+    //Initialize struct variable for measurement pair
+    measurement_pair_SHT85_f_s.temperature_f = NAN;
+    measurement_pair_SHT85_f_s.humidity_f = NAN;
+}
+
+void pSHT85_i2c_commands_LF_init_handles_for_i2c_bus(void)
+{
+    esp_err_t esp_err = ESP_FAIL;
+    
+    //Set up I2C bus as master, report error in case framework does not return ESP_OK
+    i2c_master_bus_config_t bus_config = {
+        .i2c_port = I2C_MASTER_NUM,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .glitch_ignore_cnt = 7,
+        .flags.enable_internal_pullup = true,
+    };
+
+    esp_err = i2c_new_master_bus(&bus_config, &bus_handle);
+    
+    if(ESP_OK != esp_err)
+    {
+        ESP_LOGE(module_tag, "Function pSHT85_i2c_commands_F_init() encountered a problem "
+            "while initializing the I2C bus for communication with SHT85 sensor");
+    }
+
+
+    //Set up I2C device, sensor SHT85 in this case; Report error in case framework does not return ESP_OK
+    i2c_device_config_t dev_config = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = SHT85_ADDRESS,
+        .scl_speed_hz = I2C_MASTER_FREQ_HZ,
+    };
+
+    esp_err = i2c_master_bus_add_device(bus_handle, &dev_config, &dev_handle);
+
+    if(ESP_OK != esp_err)
+    {
+        ESP_LOGE(module_tag, "Function pSHT85_i2c_commands_F_init() encountered a problem "
+            "while initializing the I2C bus for communication with SHT85 sensor");
+    }
+}
 
 
 /* ======================== Public functions ========================= */
@@ -122,8 +195,8 @@ void pSHT85_i2c_commands_F_read_serial(void)
     serial_SHT85_s.crc_calculated_u8a[0] = pSHT85_crc_handler_F_calculate_CRC(&serial_SHT85_s.four_byte_serial_SHT85_s.serial_u8a[0], 2);
     serial_SHT85_s.crc_calculated_u8a[1] = pSHT85_crc_handler_F_calculate_CRC(&serial_SHT85_s.four_byte_serial_SHT85_s.serial_u8a[2], 2);
     
-    CRC1_OK = pSHT85_crc_handler_F_compare_CRC(serial_SHT85_s.crc_received_u8a[0], serial_SHT85_s.crc_calculated_u8a[0]);
-    CRC2_OK = pSHT85_crc_handler_F_compare_CRC(serial_SHT85_s.crc_received_u8a[1], serial_SHT85_s.crc_calculated_u8a[1]);
+    CRC1_OK = pSHT85_crc_handler_F_is_CRC_equal(serial_SHT85_s.crc_received_u8a[0], serial_SHT85_s.crc_calculated_u8a[0]);
+    CRC2_OK = pSHT85_crc_handler_F_is_CRC_equal(serial_SHT85_s.crc_received_u8a[1], serial_SHT85_s.crc_calculated_u8a[1]);
 
     if( (false == CRC1_OK) || ((false == CRC2_OK)) )
     {
@@ -227,8 +300,8 @@ bool pSHT85_i2c_commands_F_retrieve_measurement_pair(measurement_pair_SHT85_f_st
         measurement_SHT85_s.crc_calculated_u8a[1] = pSHT85_crc_handler_F_calculate_CRC(&i2c_receive_data[3], 2);
 
         //Compare CRC
-        CRC1_OK = pSHT85_crc_handler_F_compare_CRC(measurement_SHT85_s.crc_received_u8a[0], measurement_SHT85_s.crc_calculated_u8a[0]);
-        CRC2_OK = pSHT85_crc_handler_F_compare_CRC(measurement_SHT85_s.crc_received_u8a[1], measurement_SHT85_s.crc_calculated_u8a[1]);
+        CRC1_OK = pSHT85_crc_handler_F_is_CRC_equal(measurement_SHT85_s.crc_received_u8a[0], measurement_SHT85_s.crc_calculated_u8a[0]);
+        CRC2_OK = pSHT85_crc_handler_F_is_CRC_equal(measurement_SHT85_s.crc_received_u8a[1], measurement_SHT85_s.crc_calculated_u8a[1]);
 
         if( (false == CRC1_OK) || ((false == CRC2_OK)) )
         {
@@ -267,61 +340,10 @@ void pSHT85_i2c_commands_F_init(void)
     ESP_LOGI(module_tag, "Init called.\n");
 
 
-    //Initialize struct variable for serial number of sensor SHT85
-    memset(serial_SHT85_s.four_byte_serial_SHT85_s.serial_u8a, 0xFFu, 4);
-    memset(serial_SHT85_s.crc_received_u8a, 0xFFu, 2);
-    memset(serial_SHT85_s.crc_calculated_u8a, 0xFFu, 2);
+    pSHT85_i2c_commands_LF_init_variables();
 
-    //Initialize struct variable for measurement values
-    memset(measurement_SHT85_s.temperature_raw_u8a, 0xFFu, 2);
-    memset(measurement_SHT85_s.humidity_raw_u8a, 0xFFu, 2);
-    memset(measurement_SHT85_s.crc_received_u8a, 0xFFu, 2);
-    memset(measurement_SHT85_s.crc_calculated_u8a, 0xFFu, 2);
-    measurement_SHT85_s.temperature_raw_u16 = 0xFFFFu;
-    measurement_SHT85_s.humidity_raw_u16 = 0xFFFFu;
-    measurement_SHT85_s.temperature_f = NAN;
-    measurement_SHT85_s.humidity_f = NAN;
-
-    //Initialize struct variable for measurement pair
-    measurement_pair_SHT85_f_s.temperature_f = NAN;
-    measurement_pair_SHT85_f_s.humidity_f = NAN;
-
-
-    esp_err_t esp_err = ESP_FAIL;
+    pSHT85_i2c_commands_LF_init_handles_for_i2c_bus();
     
-    //Set up I2C bus as master, report error in case framework does not return ESP_OK
-    i2c_master_bus_config_t bus_config = {
-        .i2c_port = I2C_MASTER_NUM,
-        .sda_io_num = I2C_MASTER_SDA_IO,
-        .scl_io_num = I2C_MASTER_SCL_IO,
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .glitch_ignore_cnt = 7,
-        .flags.enable_internal_pullup = true,
-    };
-
-    esp_err = i2c_new_master_bus(&bus_config, &bus_handle);
-    
-    if(ESP_OK != esp_err)
-    {
-        ESP_LOGE(module_tag, "Function pSHT85_i2c_commands_F_init() encountered a problem "
-            "while initializing the I2C bus for communication with SHT85 sensor");
-    }
-
-
-    //Set up I2C device, sensor SHT85 in this case; Report error in case framework does not return ESP_OK
-    i2c_device_config_t dev_config = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = SHT85_ADDRESS,
-        .scl_speed_hz = I2C_MASTER_FREQ_HZ,
-    };
-
-    esp_err = i2c_master_bus_add_device(bus_handle, &dev_config, &dev_handle);
-
-    if(ESP_OK != esp_err)
-    {
-        ESP_LOGE(module_tag, "Function pSHT85_i2c_commands_F_init() encountered a problem "
-            "while initializing the I2C bus for communication with SHT85 sensor");
-    }
 
 
     ESP_LOGI(module_tag, "Init finished.\n");
